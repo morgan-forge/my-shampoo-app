@@ -381,6 +381,89 @@
       margin-top: var(--spacing-lg);
     }
 
+    .header-row {
+      display: grid;
+      grid-template-columns: minmax(4.5rem, 1fr) auto minmax(4.5rem, 1fr);
+      align-items: center;
+      gap: var(--spacing-sm);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .header-row h1 {
+      margin: 0;
+      text-align: center;
+    }
+
+    .header-actions {
+      justify-self: end;
+    }
+
+    .sign-out-btn {
+      background: transparent;
+      border: none;
+      color: var(--color-accent-dark);
+      font-size: 0.9em;
+      font-weight: 600;
+      padding: var(--spacing-xs) var(--spacing-sm);
+      cursor: pointer;
+      min-height: 44px;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .sign-out-btn:focus {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    .auth-gate-inner {
+      max-width: 340px;
+      width: 100%;
+    }
+
+    .auth-gate-title {
+      margin: 0 0 var(--spacing-sm);
+      font-size: 1.5em;
+      color: var(--color-accent-dark);
+    }
+
+    .auth-gate-sub {
+      margin: 0 0 var(--spacing-lg);
+      line-height: 1.45;
+      opacity: 0.85;
+    }
+
+    .auth-gate-status {
+      min-height: 1.25em;
+      margin: 0 0 var(--spacing-md);
+      font-size: 0.95em;
+      color: var(--color-delete);
+    }
+
+    .auth-gate-status:empty {
+      display: none;
+    }
+
+    .button-google {
+      width: 100%;
+      background: #fff;
+      color: #3c4043;
+      border: 1px solid #dadce0;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+
+    .button-google:hover {
+      background: #f8f9fa;
+      border-color: #dadce0;
+    }
+
+    .button-google:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+
     @media (max-width: 400px) {
       .modal-content {
         width: 95%;
@@ -394,12 +477,23 @@
   </style>
 </head>
 <body class="auth-pending">
-  <div id="auth-gate" class="auth-gate" role="status" aria-live="polite">
-    <p id="auth-gate-message">Signing you in…</p>
+  <div id="auth-gate" class="auth-gate" role="dialog" aria-modal="true" aria-labelledby="auth-gate-title">
+    <div class="auth-gate-inner">
+      <h2 id="auth-gate-title" class="auth-gate-title">Welcome</h2>
+      <p class="auth-gate-sub">Sign in with Google so your bottles stay in sync on your phone and computer.</p>
+      <p id="auth-gate-message" class="auth-gate-status" role="status" aria-live="polite"></p>
+      <button type="button" id="google-signin-btn" class="button button-google">Sign in with Google</button>
+    </div>
   </div>
 
   <header>
-    <h1>Lather</h1>
+    <div class="header-row">
+      <div class="header-spacer" aria-hidden="true"></div>
+      <h1>Lather</h1>
+      <div class="header-actions">
+        <button type="button" id="sign-out-btn" class="sign-out-btn" hidden>Sign out</button>
+      </div>
+    </div>
   </header>
 
   <main>
@@ -497,6 +591,11 @@
     const deleteProductModalBtn = document.getElementById('delete-product-modal-btn');
     const errorMessageDiv = document.getElementById('error-message');
     const authGateMessage = document.getElementById('auth-gate-message');
+    const googleSignInBtn = document.getElementById('google-signin-btn');
+    const signOutBtn = document.getElementById('sign-out-btn');
+
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
+    googleProvider.setCustomParameters({ prompt: 'select_account' });
 
     let currentShampoos = [];
     let currentUid = null;
@@ -714,22 +813,56 @@
       });
     }
 
+    googleSignInBtn.addEventListener('click', async () => {
+      authGateMessage.textContent = '';
+      googleSignInBtn.disabled = true;
+      try {
+        await auth.signInWithRedirect(googleProvider);
+      } catch (err) {
+        console.error(err);
+        googleSignInBtn.disabled = false;
+        authGateMessage.textContent =
+          err.message || 'Could not start Google sign-in. Check that Google is enabled in Firebase Console.';
+      }
+    });
+
+    signOutBtn.addEventListener('click', () => {
+      auth.signOut();
+    });
+
+    auth.getRedirectResult().catch((err) => {
+      console.error(err);
+      const gateHints = {
+        'auth/operation-not-allowed':
+          'Google sign-in is off. In Firebase Console: Authentication → Sign-in method → enable Google.',
+        'auth/unauthorized-domain':
+          'This domain is not allowed. Firebase → Authentication → Settings → Authorized domains → add this site’s host.'
+      };
+      if (err.code && gateHints[err.code]) {
+        authGateMessage.textContent = gateHints[err.code];
+      } else if (err.code) {
+        showErrorMessage(err.message || 'Google sign-in failed. Try again.');
+      }
+    });
+
     auth.onAuthStateChanged((user) => {
+      googleSignInBtn.disabled = false;
+
       if (!user) {
-        authGateMessage.textContent = 'Signing you in…';
+        detachListener();
+        currentUid = null;
+        currentShampoos = [];
+        shampooList.innerHTML = '';
+        emptyState.style.display = 'none';
+        authGateMessage.textContent = '';
         document.body.classList.add('auth-pending');
-        auth
-          .signInAnonymously()
-          .catch((err) => {
-            console.error(err);
-            authGateMessage.textContent =
-              'Could not sign in. Enable Anonymous auth in Firebase Console (Authentication → Sign-in method), then refresh.';
-          });
+        signOutBtn.hidden = true;
         return;
       }
 
       currentUid = user.uid;
       document.body.classList.remove('auth-pending');
+      signOutBtn.hidden = false;
       attachShampooListener();
     });
   </script>

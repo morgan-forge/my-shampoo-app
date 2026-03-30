@@ -1,5 +1,5 @@
 /* global self, caches, fetch */
-const CACHE_NAME = 'lather-cache-v3';
+const CACHE_NAME = 'lather-cache-v4';
 const swPath = self.location.pathname;
 const BASE =
   swPath.lastIndexOf('/') >= 0 ? swPath.slice(0, swPath.lastIndexOf('/') + 1) : '/';
