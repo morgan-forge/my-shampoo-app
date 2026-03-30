@@ -595,7 +595,6 @@
     const signOutBtn = document.getElementById('sign-out-btn');
 
     const googleProvider = new firebase.auth.GoogleAuthProvider();
-    googleProvider.setCustomParameters({ prompt: 'select_account' });
 
     let currentShampoos = [];
     let currentUid = null;
@@ -809,22 +808,39 @@
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch((err) => console.warn('SW register failed', err));
+        navigator.serviceWorker
+          .register('sw.js', { updateViaCache: 'none' })
+          .catch((err) => console.warn('SW register failed', err));
       });
     }
 
-    googleSignInBtn.addEventListener('click', async () => {
+    function startGoogleRedirect() {
+      if (googleSignInBtn.disabled) return;
       authGateMessage.textContent = '';
       googleSignInBtn.disabled = true;
-      try {
-        await auth.signInWithRedirect(googleProvider);
-      } catch (err) {
-        console.error(err);
-        googleSignInBtn.disabled = false;
-        authGateMessage.textContent =
-          err.message || 'Could not start Google sign-in. Check that Google is enabled in Firebase Console.';
-      }
+      auth
+        .signInWithRedirect(googleProvider)
+        .catch((err) => {
+          console.error(err);
+          googleSignInBtn.disabled = false;
+          authGateMessage.textContent =
+            err.message || 'Could not start Google sign-in. Check that Google is enabled in Firebase Console.';
+        });
+    }
+
+    googleSignInBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      startGoogleRedirect();
     });
+
+    googleSignInBtn.addEventListener(
+      'touchend',
+      (e) => {
+        e.preventDefault();
+        if (!googleSignInBtn.disabled) startGoogleRedirect();
+      },
+      { passive: false }
+    );
 
     signOutBtn.addEventListener('click', () => {
       auth.signOut();

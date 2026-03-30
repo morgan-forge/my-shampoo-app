@@ -1,5 +1,5 @@
 /* global self, caches, fetch */
-const CACHE_NAME = 'lather-cache-v4';
+const CACHE_NAME = 'lather-cache-v5';
 const swPath = self.location.pathname;
 const BASE =
   swPath.lastIndexOf('/') >= 0 ? swPath.slice(0, swPath.lastIndexOf('/') + 1) : '/';
@@ -29,5 +29,18 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).catch(() => caches.match(`${BASE}index.html`))
+    );
+    return;
+  }
+
   event.respondWith(caches.match(request).then((cached) => cached || fetch(request)));
 });
