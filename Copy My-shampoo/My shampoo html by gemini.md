@@ -464,13 +464,13 @@ left: 0;
         // PASTE YOUR FIREBASE CONFIG HERE
         const firebaseConfig = {
 
-  apiKey: "AIzaSyCe4iQIOq9_LZoILPC9Tj8iZs6S0DbBkhc",
-  authDomain: "my-shampoo.firebaseapp.com",
-  projectId: "my-shampoo",
-  storageBucket: "my-shampoo.firebasestorage.app",
-  messagingSenderId: "171472528666",
-  appId: "1:171472528666:web:0206df49515cea37c838a3",
-  measurementId: "G-0NRQQHLXWL"
+  apiKey: "<YOUR_WEB_API_KEY>",
+  authDomain: "<PROJECT_ID>.firebaseapp.com",
+  projectId: "<PROJECT_ID>",
+  storageBucket: "<PROJECT_ID>.firebasestorage.app",
+  messagingSenderId: "<SENDER_ID>",
+  appId: "<APP_ID>",
+  measurementId: "<OPTIONAL>"
             
             
         };
