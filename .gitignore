@@ -2,4 +2,8 @@
 *.log
 .DS_Store
 
-Copy My-shampoo/Firebase my-shampoo details.md
+Copy My-shampoo/
+.firebaserc
+firebase.json
+firestore.rules
+firestore.indexes.json
