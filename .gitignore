@@ -10,3 +10,5 @@ firestore.indexes.json
 
 # Local-only secrets (never commit)
 .private/
+
+Private My-shampoo files/
